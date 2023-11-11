@@ -1,7 +1,6 @@
 from setup import Setup
 from curve import Scalar
 from prover import Prover
-from sortedcontainers import SortedSet
 
 def prover():
     print("Beginning prover test")

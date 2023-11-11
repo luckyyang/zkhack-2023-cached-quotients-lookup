@@ -3,7 +3,6 @@ from typing import Optional
 from dataclasses import dataclass
 from transcript import Transcript, Message1, Message2, Message3
 from poly import Polynomial, Basis
-from sortedcontainers import SortedSet
 from collections import Counter
 from curve import Scalar
 
