@@ -1,8 +1,9 @@
 import py_ecc.bn128 as b
-from curve import ec_lincomb, G1Point, G2Point
+from curve import ec_lincomb, G1Point, G2Point, Scalar
 from verifier import VerificationKey
 from dataclasses import dataclass
 from poly import Polynomial, Basis
+from program import CommonPreprocessedInput
 
 @dataclass
 class Setup(object):
@@ -68,3 +69,11 @@ class Setup(object):
         # 4. (c): [Li(x)−Li(0) / x] * G1
         print("setup complete")
 
+    def verification_key(self, pk: CommonPreprocessedInput) -> VerificationKey:
+        return VerificationKey(
+            pk.group_order_N,
+            pk.group_order_n,
+            Scalar.root_of_unity(pk.group_order_N),
+            Scalar.root_of_unity(pk.group_order_n),
+            self.powers_of_x2,
+        )
