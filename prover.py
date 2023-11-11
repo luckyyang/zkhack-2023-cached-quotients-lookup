@@ -28,10 +28,12 @@ class Prover:
     setup: Setup
     table: list
 
-    def __init__(self, setup: Setup, table: list):
+    def __init__(self, setup: Setup, table: list, group_order: int):
         self.setup = setup
         self.table = table
+        self.group_order = group_order
         self.powers_of_x = setup.powers_of_x
+        self.roots_of_unity = Scalar.roots_of_unity(group_order)
     def prove(self, witness) -> Proof:
         # Initialise Fiat-Shamir transcript
         transcript = Transcript(b"plonk")
@@ -57,7 +59,8 @@ class Prover:
         self.m_values = [Scalar(duplicates.get(val, 0)) for val in self.table]
         self.t_values = [Scalar(val) for val in self.table]
         print("m_values: ", self.m_values)
-        self.m_poly = Polynomial(self.m_values, Basis.LAGRANGE)
+        m_poly = Polynomial(self.m_values, Basis.LAGRANGE)
+        self.m_poly = m_poly.ifft()
         self.m_comm_1 = setup.commit(self.m_poly)
         print("Commitment of m(X): ", self.m_comm_1)
 
@@ -66,6 +69,7 @@ class Prover:
     # Prover sends commitment of A(X), Q_A(X), B_0(X), Q_B(X), P(X)
     def round_2(self) -> Message2:
         setup = self.setup
+        group_order = self.group_order
         beta = self.beta
         m_values = self.m_values
         t_values = self.t_values
@@ -75,18 +79,42 @@ class Prover:
         for i, t_i in enumerate(t_values):
             A_i = m_values[i]/(beta + t_i)
             self.A_values.append(A_i)
+            # sanity check
+            assert A_i == m_values[i]/(beta + t_i), "why not equal"
         print("A_values: ", self.A_values)
 
         # 1.b. calculate A(X) from A_i values
-        self.A_poly = Polynomial(self.A_values, Basis.LAGRANGE)
+        A_poly = Polynomial(self.A_values, Basis.LAGRANGE)
+        # in coefficient form
+        self.A_poly = A_poly.ifft()
         # 1.c. commit A(X)
         self.A_comm_1 = setup.commit(self.A_poly)
         print("Commitment of A(X): ", self.A_comm_1)
 
         # 2. commit Q_A(X)
-        # 2.a. calculate Q_A_i values
-        # 2.b. calculate Q_A(X) from Q_A_i values
-        # 2.c. commit Q_A(X)
+        # 2.a. T(X) in coefficient form
+        T_poly = Polynomial(t_values, Basis.LAGRANGE)
+        # in coefficient form
+        self.T_poly = T_poly.ifft()
+        # 2.b. vanishing polynomial: X^N - 1, N = group_order - 1
+        ZH_array = [Scalar(-1)] + [Scalar(0)] * (group_order - 1) + [Scalar(1)]
+        # in coefficient form
+        ZH_poly = Polynomial(ZH_array, Basis.MONOMIAL)
+        print("self.roots_of_unity: ", self.roots_of_unity)
+
+        # sanity check
+        for i, A_i in enumerate(self.A_values):
+            point = self.roots_of_unity[i]
+            a_value = self.A_poly.coeff_eval(point)
+            m_value = self.m_poly.coeff_eval(point)
+            t_value = self.T_poly.coeff_eval(point)
+            assert a_value == m_value / (beta + t_value) , "Not equal"
+        # 2.c. Q_A(X) in coefficient form
+        self.Q_A_poly = (self.A_poly * (self.T_poly + beta) - self.m_poly) / ZH_poly
+        print("Q_A_poly value: ", self.Q_A_poly.values)
+        # 2.d. commit Q_A(X)
+        self.Q_A_comm_1 = setup.commit(self.Q_A_poly)
+        print("Commitment of Q_A(X): ", self.Q_A_comm_1)
 
         # 3. commit B_0(X)
         # 3.a. calculate B_0_i values
