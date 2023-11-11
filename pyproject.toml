@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "Cached Quotient Lookups"
+version = "0.1.0"
+description = "A Python implementation of Cached Quotient Lookups"
+authors = ["Harry Liu"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+py-ecc = "^6.0.0"
+galois = "^0.3.5"
+sortedcontainers = "^2.4.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^0.991"
+black = "^22.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+explicit_package_bases = true
