@@ -15,7 +15,7 @@ def prover():
     # values to lookup
     witness = [1, 2, 1, 7, 3, 6, 3, 2]
     # witness = [Scalar(element) for element in witness_list]
-    prover = Prover(setup, public_table, group_order)
+    prover = Prover(setup, public_table, group_order, group_order)
     proof = prover.prove(witness)
     print("Prover test success")
     return setup, proof, group_order

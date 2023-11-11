@@ -12,7 +12,9 @@ class VerificationKey:
         # round 2
         # 2.11 verification
         # 2.12 verification
-
+        # round 3
+        # 3.6 (c)
+        # 3.7 (b)
         print("Finished to verify proof")
         return True
 
@@ -40,3 +42,6 @@ class VerificationKey:
 
         assert b.pairing(self.X_2, W_quot) == b.pairing(b.G2, ec_comb)
         print(f"Done KZG10 commitment check for {eval_key} polynomial")
+
+    def rlc(self, term_1, term_2, term_3):
+        return term_1 + term_2 * self.eta + term_2 * self.eta * self.eta

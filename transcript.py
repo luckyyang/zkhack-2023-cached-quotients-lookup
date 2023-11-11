@@ -12,15 +12,13 @@ class Message1:
 
 @dataclass
 class Message2:
-    # [z(x)]₁ (commitment to permutation polynomial)
-    z_1: G1Point
-
+    # [A(x)]₁
+    A_comm_1: G1Point
 
 @dataclass
 class Message3:
     # [quot(x)]₁ (commitment to the quotient polynomial t(X))
     W_t: G1Point
-
 
 # https://merlin.cool/
 class Transcript(MerlinTranscript):
@@ -42,25 +40,19 @@ class Transcript(MerlinTranscript):
                 self.append(label, challenge_bytes)
                 return f
 
-    def round_1(self, message: Message1) -> tuple[Scalar, Scalar]:
+    def round_1(self, message: Message1) -> tuple[Scalar]:
         self.append_point(b"m_comm_1", message.m_comm_1)
-
-        # The first two Fiat-Shamir challenges
         beta = self.get_and_append_challenge(b"beta")
-        gamma = self.get_and_append_challenge(b"gamma")
 
-        return beta, gamma
+        return beta
 
     def round_2(self, message: Message2) -> tuple[Scalar, Scalar]:
-        self.append_point(b"z_1", message.z_1)
+        self.append_point(b"A_comm_1", message.A_comm_1)
 
-        alpha = self.get_and_append_challenge(b"alpha")
-        # This value could be anything, it just needs to be unpredictable. Lets us
-        # have evaluation forms at cosets to avoid zero evaluations, so we can
-        # divide polys without the 0/0 issue
-        fft_cofactor = self.get_and_append_challenge(b"fft_cofactor")
+        gamma = self.get_and_append_challenge(b"gamma")
+        eta = self.get_and_append_challenge(b"eta")
 
-        return alpha, fft_cofactor
+        return gamma, eta
 
     def round_3(self, message: Message3) -> Scalar:
         self.append_point(b"W_t", message.W_t)
