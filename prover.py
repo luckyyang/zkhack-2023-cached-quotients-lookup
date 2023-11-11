@@ -37,6 +37,7 @@ class Prover:
     def prove(self, witness) -> Proof:
         # Initialise Fiat-Shamir transcript
         transcript = Transcript(b"plonk")
+        self.witness = witness
 
         # Round 1
         msg_1 = self.round_1(witness)
@@ -80,7 +81,7 @@ class Prover:
             A_i = m_values[i]/(beta + t_i)
             self.A_values.append(A_i)
             # sanity check
-            assert A_i == m_values[i]/(beta + t_i), "why not equal"
+            assert A_i == m_values[i]/(beta + t_i), "A: not equal"
         print("A_values: ", self.A_values)
 
         # 1.b. calculate A(X) from A_i values
@@ -118,8 +119,21 @@ class Prover:
 
         # 3. commit B_0(X)
         # 3.a. calculate B_0_i values
+        self.B_values = []
+        f_values = self.witness
+        for i, f_i in enumerate(f_values):
+            B_i = 1 / (beta + f_i)
+            self.B_values.append(B_i)
+            # sanity check
+            assert B_i == 1 / (beta + f_i), "B: not equal"
+        print("B_values: ", self.B_values)
         # 3.b. calculate B_0(X) from B_0_i values
+        B_poly = Polynomial(self.B_values, Basis.LAGRANGE)
+        # in coefficient form
+        self.B_poly = B_poly.ifft()
         # 3.c. commit B_0(X)
+        self.B_comm_1 = setup.commit(self.B_poly)
+        print("Commitment of B(X): ", self.B_comm_1)
 
         # 4. commit Q_B(X)
         # 4.a. calculate Q_B_i values
