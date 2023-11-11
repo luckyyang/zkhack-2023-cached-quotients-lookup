@@ -9,6 +9,9 @@ from poly import Polynomial, Basis
 class VerificationKey:
     def verify_proof(self, group_order: int, pf, public=[]) -> bool:
         print("Start to verify proof")
+        # round 2
+        # 2.11 verification
+        # 2.12 verification
 
         print("Finished to verify proof")
         return True
