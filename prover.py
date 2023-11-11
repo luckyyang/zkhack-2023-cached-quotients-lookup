@@ -14,12 +14,22 @@ class Proof:
 
     def flatten(self):
         proof = {}
-        proof["a_eval"] = self.msg_1.a_eval
-        proof["W_a"] = self.msg_2.W_a
-        proof["W_a_quot"] = self.msg_2.W_a_quot
+        # msg_1
+        proof["m_comm_1"] = self.msg_1.m_comm_1
+        # msg_2
+        proof["A_comm_1"] = self.msg_2.A_comm_1
+        proof["Q_A_comm_1"] = self.msg_2.Q_A_comm_1
+        proof["B_0_comm_1"] = self.msg_2.B_0_comm_1
+        proof["Q_B_comm_1"] = self.msg_2.Q_B_comm_1
+        proof["P_comm_1"] = self.msg_2.P_comm_1
+        # msg_3
+        proof["b_0_gamma"] = self.msg_3.b_0_gamma
+        proof["f_gamma"] = self.msg_3.f_gamma
+        proof["a_0"] = self.msg_3.a_0
+        proof["h_poly_comm_1"] = self.msg_3.h_poly_comm_1
+        proof["a_0_comm_1"] = self.msg_3.a_0_comm_1
 
         return proof
-
 
 @dataclass
 class Prover:
@@ -179,7 +189,13 @@ class Prover:
         self.P_comm_1 = setup.commit(self.P_poly)
         print("Commitment of P(X): ", self.P_comm_1)
 
-        return Message2(self.A_comm_1)
+        return Message2(
+            self.A_comm_1,
+            self.Q_A_comm_1,
+            self.B_0_comm_1,
+            self.Q_B_comm_1,
+            self.P_comm_1
+        )
 
     def round_3(self) -> Message3:
         # 1. V sends random γ,η ∈ F.
@@ -215,8 +231,7 @@ class Prover:
         a_0_poly = (self.A_poly - a_0) / self.x_poly
         a_0_comm_1 = setup.commit(a_0_poly)
 
-        # todo
-        return Message3(self.powers_of_x[4])
+        return Message3(b_0_gamma, f_gamma, a_0, h_poly_comm_1, a_0_comm_1)
 
     # random linear combination
     def rlc(self, term_1, term_2, term_3):

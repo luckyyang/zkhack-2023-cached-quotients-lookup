@@ -6,19 +6,27 @@ from dataclasses import dataclass
 
 @dataclass
 class Message1:
-    # [m(x)]₁
+    # Commitments in G1
     m_comm_1: G1Point
 
 
 @dataclass
 class Message2:
-    # [A(x)]₁
+    # Commitments in G1
     A_comm_1: G1Point
+    Q_A_comm_1: G1Point
+    B_0_comm_1: G1Point
+    Q_B_comm_1: G1Point
+    P_comm_1: G1Point
 
 @dataclass
 class Message3:
-    # [quot(x)]₁ (commitment to the quotient polynomial t(X))
-    W_t: G1Point
+    # Commitments in G1
+    b_0_gamma: G1Point
+    f_gamma: G1Point
+    a_0: G1Point
+    h_poly_comm_1: G1Point
+    a_0_comm_1: G1Point
 
 # https://merlin.cool/
 class Transcript(MerlinTranscript):
@@ -48,14 +56,22 @@ class Transcript(MerlinTranscript):
 
     def round_2(self, message: Message2) -> tuple[Scalar, Scalar]:
         self.append_point(b"A_comm_1", message.A_comm_1)
+        self.append_point(b"Q_A_comm_1", message.Q_A_comm_1)
+        self.append_point(b"B_0_comm_1", message.B_0_comm_1)
+        self.append_point(b"Q_B_comm_1", message.Q_B_comm_1)
+        self.append_point(b"P_comm_1", message.P_comm_1)
 
         gamma = self.get_and_append_challenge(b"gamma")
         eta = self.get_and_append_challenge(b"eta")
 
         return gamma, eta
 
-    def round_3(self, message: Message3) -> Scalar:
-        self.append_point(b"W_t", message.W_t)
+    # def round_3(self, message: Message3) -> Scalar:
+    #     self.append_point(b"b_0_gamma", message.b_0_gamma)
+    #     self.append_point(b"f_gamma", message.f_gamma)
+    #     self.append_point(b"a_0", message.a_0)
+    #     self.append_point(b"h_poly_comm_1", message.h_poly_comm_1)
+    #     self.append_point(b"a_0_comm_1", message.a_0_comm_1)
 
-        zeta = self.get_and_append_challenge(b"zeta")
-        return zeta
+    #     zeta = self.get_and_append_challenge(b"zeta")
+    #     return zeta
