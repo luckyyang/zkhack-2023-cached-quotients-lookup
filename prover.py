@@ -51,7 +51,14 @@ class Prover:
         return Proof(msg_1, msg_2, msg_3)
 
     def round_1(self, witness) -> Message1:
-        return Message1(self.powers_of_x[2])
+        setup = self.setup
+        duplicates = dict(Counter(witness))
+        m_values = [Scalar(duplicates.get(val, 0)) for val in self.table]
+        print(m_values)
+        self.m_poly = Polynomial(m_values, Basis.LAGRANGE)
+        self.m_comm_1 = setup.commit(self.m_poly)
+
+        return Message1(self.m_comm_1)
 
     def round_2(self) -> Message2:
         setup = self.setup
