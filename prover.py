@@ -126,13 +126,25 @@ class Prover:
             # sanity check
             assert B_i == 1 / (beta + f_i), "B: not equal"
         print("B_values: ", self.B_values)
-        # 3.b. calculate B_0(X) from B_0_i values
+        # 3.b. calculate B_0(X) from B_0_i values, B_0(X) = (B(X) - B(0)) / X
         B_poly = Polynomial(self.B_values, Basis.LAGRANGE)
         # in coefficient form
         self.B_poly = B_poly.ifft()
+        # f(X) = X, coefficient form: [0, 1]
+        x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
+        B_0_eval = self.B_poly.coeff_eval(Scalar(0))
+        print("B_0_eval: ", B_0_eval)
+        self.B_0_poly = (self.B_poly - B_0_eval) / x_poly
+        # sanity check
+        for i in range(group_order):
+            point = self.roots_of_unity[i]
+            b_value = self.B_poly.coeff_eval(point)
+            b_0_value = self.B_0_poly.coeff_eval(point)
+            assert b_value == self.B_values[i], "B_value and self.B_values[i]: Not equal"
+            assert b_0_value == (b_value - B_0_eval) / point, "B_0: Not equal"
         # 3.c. commit B_0(X)
-        self.B_comm_1 = setup.commit(self.B_poly)
-        print("Commitment of B(X): ", self.B_comm_1)
+        self.B_0_comm_1 = setup.commit(self.B_0_poly)
+        print("Commitment of B_0(X): ", self.B_0_comm_1)
 
         # 4. commit Q_B(X)
         # 4.a. calculate Q_B_i values
