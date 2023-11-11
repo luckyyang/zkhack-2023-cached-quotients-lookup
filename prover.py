@@ -166,9 +166,13 @@ class Prover:
         print("Commitment of Q_B(X): ", self.Q_B_comm_1)
 
         # 5. commit P(X)
-        # 5.a. calculate P_i values
-        # 5.b. calculate P(X) from P_i values
+        x_exponent_order = group_order - 1 - (group_order - 2)
+        x_exponent_values_in_coeff = [Scalar(0)] * (x_exponent_order) + [Scalar(1)]
+        x_exponent_poly = Polynomial(x_exponent_values_in_coeff, Basis.MONOMIAL)
+        self.P_poly = self.B_0_poly * x_exponent_poly
         # 5.c. commit P(X)
+        self.P_comm_1 = setup.commit(self.P_poly)
+        print("Commitment of P(X): ", self.P_comm_1)
 
         print("self.beta, self.gamma:", self.beta, self.gamma)
         return Message2(self.powers_of_x[3])
