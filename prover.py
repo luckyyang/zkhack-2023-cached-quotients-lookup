@@ -36,7 +36,7 @@ class Prover:
     def prove(self, witness) -> Proof:
         # Initialise Fiat-Shamir transcript
         transcript = Transcript(b"plonk")
-        self.witness = witness
+        self.lookup_table = [Scalar(val) for val in witness]
 
         # Round 1
         msg_1 = self.round_1(witness)
@@ -119,7 +119,7 @@ class Prover:
         # 3. commit B_0(X)
         # 3.a. calculate B_0_i values
         self.B_values = []
-        f_values = self.witness
+        f_values = self.lookup_table
         for i, f_i in enumerate(f_values):
             B_i = 1 / (beta + f_i)
             self.B_values.append(B_i)
@@ -147,9 +147,23 @@ class Prover:
         print("Commitment of B_0(X): ", self.B_0_comm_1)
 
         # 4. commit Q_B(X)
-        # 4.a. calculate Q_B_i values
-        # 4.b. calculate Q_B(X) from Q_B_i values
-        # 4.c. commit Q_B(X)
+        # 4.a. f(X) in coefficient form
+        f_poly = Polynomial(f_values, Basis.LAGRANGE)
+        # in coefficient form
+        self.f_poly = f_poly.ifft()
+
+        # sanity check
+        for i, B_i in enumerate(self.B_values):
+            point = self.roots_of_unity[i]
+            b_value = self.B_poly.coeff_eval(point)
+            f_value = self.f_poly.coeff_eval(point)
+            assert b_value == 1 / (beta + f_value) , "B quotient: Not equal"
+        # 4.b. Q_B(X) in coefficient form
+        self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZH_poly
+        print("Q_A_poly value: ", self.Q_A_poly.values)
+        # 4.c. commit Q_A(X)
+        self.Q_B_comm_1 = setup.commit(self.Q_B_poly)
+        print("Commitment of Q_B(X): ", self.Q_B_comm_1)
 
         # 5. commit P(X)
         # 5.a. calculate P_i values
