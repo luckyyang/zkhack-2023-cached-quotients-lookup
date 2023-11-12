@@ -100,6 +100,8 @@ class Prover:
         A_poly = Polynomial(self.A_values, Basis.LAGRANGE)
         # in coefficient form
         self.A_poly = A_poly.ifft()
+        assert A_poly.barycentric_eval(Scalar(0))  == self.A_poly.coeff_eval(Scalar(0)), "A value at 0 should be equal"
+
         # 1.c. commit A(X)
         self.A_comm_1 = setup.commit(self.A_poly)
         print("Commitment of A(X): ", self.A_comm_1)
@@ -113,7 +115,6 @@ class Prover:
         ZH_array = [Scalar(-1)] + [Scalar(0)] * (group_order_N - 1) + [Scalar(1)]
         # in coefficient form
         ZH_poly = Polynomial(ZH_array, Basis.MONOMIAL)
-        print("self.roots_of_unity_N: ", self.roots_of_unity_N)
 
         # sanity check
         for i, A_i in enumerate(self.A_values):
@@ -124,7 +125,6 @@ class Prover:
             assert a_value == m_value / (beta + t_value) , "Not equal"
         # 2.c. Q_A(X) in coefficient form
         self.Q_A_poly = (self.A_poly * (self.T_poly + beta) - self.m_poly) / ZH_poly
-        print("Q_A_poly value: ", self.Q_A_poly.values)
         # 2.d. commit Q_A(X)
         self.Q_A_comm_1 = setup.commit(self.Q_A_poly)
         print("Commitment of Q_A(X): ", self.Q_A_comm_1)
@@ -138,7 +138,6 @@ class Prover:
             self.B_values.append(B_i)
             # sanity check
             assert B_i == 1 / (beta + f_i), "B: not equal"
-        print("B_values: ", self.B_values)
         # 3.b. compute B_0(X) from B_0_i values, B_0(X) = (B(X) - B(0)) / X
         B_poly = Polynomial(self.B_values, Basis.LAGRANGE)
         # in coefficient form
@@ -173,7 +172,6 @@ class Prover:
             assert b_value == 1 / (beta + f_value) , "B quotient: Not equal"
         # 4.b. Q_B(X) in coefficient form
         self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZH_poly
-        print("Q_A_poly value: ", self.Q_A_poly.values)
         # 4.c. commit Q_A(X)
         self.Q_B_comm_1 = setup.commit(self.Q_B_poly)
         print("Commitment of Q_B(X): ", self.Q_B_comm_1)
@@ -230,6 +228,7 @@ class Prover:
         # (a) compute a_0_comm_1
         a_0_poly = (self.A_poly - a_0) / self.x_poly
         a_0_comm_1 = setup.commit(a_0_poly)
+        print("Prover: a_0_comm_1: ", a_0_comm_1)
 
         return Message3(b_0_gamma, f_gamma, a_0, h_comm_1, a_0_comm_1)
 

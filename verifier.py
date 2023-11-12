@@ -77,12 +77,12 @@ class VerificationKey:
         assert B_0_check_lhs == B_0_check_rhs, "Check 3 failed: B0 degree check"
         print("=== Finished Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
 
-
         ### Check 4: 3.7 (b) ###
         print("=== Started Check 4: KZG check for the correctness of a_0 ===")
         a_0_check_comb = ec_lincomb([
             # A_comm_1 - a_0
-            (A_comm_1, -a_0)
+            (A_comm_1, 1),
+            (b.G1, -a_0)
         ])
         x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
         x_comm_2 = setup.commit2(x_poly)
@@ -92,8 +92,8 @@ class VerificationKey:
         assert one_comm_2 == powers_of_x2[0], "failed 1 commitment ==========="
         a_0_check_lhs = b.pairing(one_comm_2, a_0_check_comb)
         a_0_check_rhs = b.pairing(x_comm_2, a_0_comm_1)
-        # FIXME: should equal
-        # assert a_0_check_lhs == a_0_check_rhs, "Check 4 failed: a_0 check"
+
+        assert a_0_check_lhs == a_0_check_rhs, "Check 4 failed: a_0 check"
         print("=== Finished Check 4: KZG check for the correctness of a_0 ===")
 
         print("Finished to verify proof")
