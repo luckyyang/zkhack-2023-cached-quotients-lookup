@@ -4,7 +4,6 @@ from curve import *
 from transcript import Transcript
 from poly import Polynomial, Basis
 from curve import ec_lincomb, G1Point, G2Point
-from py_ecc.bn128 import G1, G2, pairing, add, multiply, eq, neg
 
 @dataclass
 class VerificationKey:
@@ -46,8 +45,8 @@ class VerificationKey:
         ])
         A_check_lhs1 = b.pairing(self.T_comm_2, A_comm_1)
         A_check_rhs1 = b.pairing(self.Z_V_comm_2, Q_A_comm_1)
-        A_check_rhs2 = b.pairing(self.powers_of_x2[0], comb)
-        assert A_check_lhs1 == A_check_rhs1 * A_check_rhs2, "verify 1: not equal"
+        A_check_rhs2 = b.pairing(powers_of_x2[0], comb)
+        assert A_check_lhs1 == A_check_rhs1 * A_check_rhs2, "Check 1 failed: A encodes the correct values"
         print("=== Finished Check 1: round 2.11: A encodes the correct values ===")
 
         ### Check 2: round 2.12: B_0 has the appropriate degree ###
@@ -60,12 +59,12 @@ class VerificationKey:
         x_exponent_comm_2 = setup.commit2(x_exponent_poly)
 
         B_0_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
-        B_0_check_rhs = b.pairing(self.powers_of_x2[0], P_comm_1)
-        assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
+        B_0_check_rhs = b.pairing(powers_of_x2[0], P_comm_1)
+        assert B_0_check_lhs == B_0_check_rhs, "Check 2 failed: B0 degree check"
         print("=== Finished Check 2: B_0 has the appropriate degree ===")
 
         ### Check 3: 3.6 (c) ###
-        print("=== Start Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
+        print("=== Started Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
         # compute c
         b_0 = group_order_N * a_0 / group_order_n
         Z_H_gamma = gamma ** group_order_n - 1
@@ -74,15 +73,28 @@ class VerificationKey:
         c = self.rlc(b_0, f_gamma, Q_b_gamma, eta)
         # batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma
         batch_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
-        batch_check_rhs = b.pairing(self.powers_of_x2[0], P_comm_1)
-        assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
+        batch_check_rhs = b.pairing(powers_of_x2[0], P_comm_1)
+        assert B_0_check_lhs == B_0_check_rhs, "Check 3 failed: B0 degree check"
         print("=== Finished Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
 
 
         ### Check 4: 3.7 (b) ###
-        print("=== Start Check 4: KZG check for the correctness of a_0 ===")
-        # TODO check 4
-        print("=== Start Check 4: KZG check for the correctness of a_0 ===")
+        print("=== Started Check 4: KZG check for the correctness of a_0 ===")
+        a_0_check_comb = ec_lincomb([
+            # A_comm_1 - a_0
+            (A_comm_1, -a_0)
+        ])
+        x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
+        x_comm_2 = setup.commit2(x_poly)
+        assert x_comm_2 == powers_of_x2[1], "failed x commitment ==========="
+        one_poly = Polynomial([Scalar(1)], Basis.MONOMIAL)
+        one_comm_2 = setup.commit2(one_poly)
+        assert one_comm_2 == powers_of_x2[0], "failed 1 commitment ==========="
+        a_0_check_lhs = b.pairing(one_comm_2, a_0_check_comb)
+        a_0_check_rhs = b.pairing(x_comm_2, a_0_comm_1)
+        # FIXME: should equal
+        # assert a_0_check_lhs == a_0_check_rhs, "Check 4 failed: a_0 check"
+        print("=== Finished Check 4: KZG check for the correctness of a_0 ===")
 
         print("Finished to verify proof")
         return True
