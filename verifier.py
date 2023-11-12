@@ -16,14 +16,13 @@ class VerificationKey:
     T_comm_2: G2Point
     Z_V_comm_2: G2Point
 
-    def verify_proof(self, pf) -> bool:
+    def verify_proof(self, pf, setup) -> bool:
         print("Start to verify proof")
         beta, gamma, eta = self.compute_challenges(pf)
+        group_order_N = self.group_order_N
+        group_order_n = self.group_order_n
         powers_of_x2 = self.powers_of_x2
         proof = pf.flatten()
-        print("proof: ", proof)
-        print("self.Z_V_comm_2, self.Z_V_comm_2: ", self.Z_V_comm_2, self.Z_V_comm_2)
-        print("beta, gamma, eta: ", beta, gamma, eta)
         # get commitments
         m_comm_1 = proof["m_comm_1"]
         A_comm_1 = proof["A_comm_1"]
@@ -45,7 +44,6 @@ class VerificationKey:
             (m_comm_1, 1),
             (A_comm_1, -beta)
         ])
-        # TODO check 1
         A_check_lhs1 = b.pairing(self.T_comm_2, A_comm_1)
         A_check_rhs1 = b.pairing(self.Z_V_comm_2, Q_A_comm_1)
         A_check_rhs2 = b.pairing(self.powers_of_x2[0], comb)
@@ -54,25 +52,30 @@ class VerificationKey:
 
         ### Check 2: round 2.12: B_0 has the appropriate degree ###
         print("=== Started Check 2: B_0 has the appropriate degree ===")
-        # TODO check 2
-        # B_0_check_lhs = b.pairing(B_0_comm_1, x_exponent)
-        # B_0_check_rhs = b.pairing(P_comm_1, self.powers_of_x2[0])
-        # assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
-        print("=== Finished Check 1: B_0 has the appropriate degree ===")
+        # TODO Put it into common preprocessed input?
+        x_exponent_order = group_order_N - 1 - (group_order_n - 2)
+        x_exponent_values_in_coeff = [Scalar(0)] * (x_exponent_order) + [Scalar(1)]
+        x_exponent_poly = Polynomial(x_exponent_values_in_coeff, Basis.MONOMIAL)
+        # commit x_exponent_poly
+        x_exponent_comm_2 = setup.commit2(x_exponent_poly)
+
+        B_0_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
+        B_0_check_rhs = b.pairing(self.powers_of_x2[0], P_comm_1)
+        assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
+        print("=== Finished Check 2: B_0 has the appropriate degree ===")
 
         ### Check 3: 3.6 (c) ###
         print("=== Start Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
         # compute c
-        b_0 = self.group_order_N * a_0 / self.group_order_n
-        Z_H_gamma = gamma ** self.group_order_n - 1
+        b_0 = group_order_N * a_0 / group_order_n
+        Z_H_gamma = gamma ** group_order_n - 1
         b_gamma = b_0_gamma * gamma + b_0
         Q_b_gamma = (b_gamma * (f_gamma + beta) - Scalar(1)) / Z_H_gamma
         c = self.rlc(b_0, f_gamma, Q_b_gamma, eta)
-        # TODO check 3
         # batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma
-        # batch_check_lhs = b.pairing(B_0_comm_1, x_exponent)
-        # batch_check_rhs = b.pairing(P_comm_1, self.powers_of_x2[0])
-        # assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
+        batch_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
+        batch_check_rhs = b.pairing(self.powers_of_x2[0], P_comm_1)
+        assert B_0_check_lhs == B_0_check_rhs, "B0 degree check failed"
         print("=== Finished Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
 
 

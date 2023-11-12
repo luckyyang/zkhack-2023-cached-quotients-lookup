@@ -22,7 +22,7 @@ def verifier(setup, proof, group_order_N, group_order_n):
     print("Beginning verifier test")
     common_preprocessed_input = CommonPreprocessedInput(group_order_N, group_order_n)
     vk = setup.verification_key(common_preprocessed_input)
-    assert vk.verify_proof(proof)
+    assert vk.verify_proof(proof, setup)
     print("Verifier test success")
 
 if __name__ == "__main__":
