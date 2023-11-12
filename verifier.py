@@ -4,7 +4,7 @@ from curve import *
 from transcript import Transcript
 from poly import Polynomial, Basis
 from curve import ec_lincomb, G1Point, G2Point
-from py_ecc.bn128 import G1, G2, pairing, add, multiply, eq
+from py_ecc.bn128 import G1, G2, pairing, add, multiply, eq, neg
 
 @dataclass
 class VerificationKey:
@@ -45,19 +45,12 @@ class VerificationKey:
             (m_comm_1, 1),
             (A_comm_1, -beta)
         ])
-        # comb1 = add(m_comm_1, multiply(A_comm_1, -beta))
-        print("comb: ", comb)
-        # print("comb1: ", comb1)
         # TODO check 1
-        # A_check_lhs1 = b.pairing(A_comm_1, self.T_comm_2)
-        # A_check_rhs1 = b.pairing(Q_A_comm_1, self.Z_V_comm_2)
-        # A_check_rhs2 = b.pairing(comb, self.powers_of_x2[0])
-        # print("lhs1: ", A_check_lhs1)
-        # print("A_check_rhs1: ", A_check_rhs1)
-        # print("A_check_rhs2: ", A_check_rhs2)
+        A_check_lhs1 = b.pairing(self.T_comm_2, A_comm_1)
+        A_check_rhs1 = b.pairing(self.Z_V_comm_2, Q_A_comm_1)
+        A_check_rhs2 = b.pairing(self.powers_of_x2[0], comb)
+        assert A_check_lhs1 == A_check_rhs1 * A_check_rhs2, "verify 1: not equal"
         print("=== Finished Check 1: round 2.11: A encodes the correct values ===")
-        # assert A_check_lhs1 == A_check_rhs1, "verify 1: not equal"
-        # assert lhs1 == b.multiply(A_check_rhs1, A_check_rhs2), "A check failed"
 
         ### Check 2: round 2.12: B_0 has the appropriate degree ###
         print("=== Started Check 2: B_0 has the appropriate degree ===")
