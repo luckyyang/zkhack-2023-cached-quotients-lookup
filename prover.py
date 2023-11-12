@@ -26,7 +26,7 @@ class Proof:
         proof["b_0_gamma"] = self.msg_3.b_0_gamma
         proof["f_gamma"] = self.msg_3.f_gamma
         proof["a_0"] = self.msg_3.a_0
-        proof["h_poly_comm_1"] = self.msg_3.h_poly_comm_1
+        proof["h_comm_1"] = self.msg_3.h_comm_1
         proof["a_0_comm_1"] = self.msg_3.a_0_comm_1
 
         return proof
@@ -224,14 +224,14 @@ class Prover:
         v = self.rlc(b_0_gamma, f_gamma, Q_b_gamma)
         # (b) compute commitment: pi_gamma = [h(X)]_1
         h_poly = (self.rlc(self.B_0_poly, self.f_poly, self.Q_B_poly) - v) / (self.x_poly - gamma)
-        h_poly_comm_1 = setup.commit(h_poly)
+        h_comm_1 = setup.commit(h_poly)
 
         # 3.7
         # (a) compute a_0_comm_1
         a_0_poly = (self.A_poly - a_0) / self.x_poly
         a_0_comm_1 = setup.commit(a_0_poly)
 
-        return Message3(b_0_gamma, f_gamma, a_0, h_poly_comm_1, a_0_comm_1)
+        return Message3(b_0_gamma, f_gamma, a_0, h_comm_1, a_0_comm_1)
 
     # random linear combination
     def rlc(self, term_1, term_2, term_3):

@@ -25,7 +25,7 @@ class Message3:
     b_0_gamma: G1Point
     f_gamma: G1Point
     a_0: G1Point
-    h_poly_comm_1: G1Point
+    h_comm_1: G1Point
     a_0_comm_1: G1Point
 
 # https://merlin.cool/
@@ -70,7 +70,7 @@ class Transcript(MerlinTranscript):
     #     self.append_point(b"b_0_gamma", message.b_0_gamma)
     #     self.append_point(b"f_gamma", message.f_gamma)
     #     self.append_point(b"a_0", message.a_0)
-    #     self.append_point(b"h_poly_comm_1", message.h_poly_comm_1)
+    #     self.append_point(b"h_comm_1", message.h_comm_1)
     #     self.append_point(b"a_0_comm_1", message.a_0_comm_1)
 
     #     zeta = self.get_and_append_challenge(b"zeta")
