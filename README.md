@@ -1,6 +1,6 @@
 # Cached Quotient Lookups
 
-A Python implementation of Cached Quotient Lookups
+A Python implementation of [Cached Quotient Lookups](https://eprint.iacr.org/2022/1763.pdf)
 
 ## Getting started
 
