@@ -19,6 +19,7 @@ class Proof:
         # msg_2
         proof["A_comm_1"] = self.msg_2.A_comm_1
         proof["Q_A_comm_1"] = self.msg_2.Q_A_comm_1
+        proof["f_comm_1"] = self.msg_2.f_comm_1
         proof["B_0_comm_1"] = self.msg_2.B_0_comm_1
         proof["Q_B_comm_1"] = self.msg_2.Q_B_comm_1
         proof["P_comm_1"] = self.msg_2.P_comm_1
@@ -26,7 +27,7 @@ class Proof:
         proof["b_0_at_gamma"] = self.msg_3.b_0_at_gamma
         proof["f_at_gamma"] = self.msg_3.f_at_gamma
         proof["a_at_0"] = self.msg_3.a_at_0
-        proof["h_comm_1"] = self.msg_3.h_comm_1
+        proof["pi_gamma"] = self.msg_3.pi_gamma
         proof["a_0_comm_1"] = self.msg_3.a_0_comm_1
 
         return proof
@@ -164,6 +165,9 @@ class Prover:
         f_poly = Polynomial(f_values, Basis.LAGRANGE)
         # in coefficient form
         self.f_poly = f_poly.ifft()
+        # commit f(X)
+        self.f_comm_1 = setup.commit(self.f_poly)
+        print("Commitment of f(X): ", self.f_comm_1)
 
         # sanity check
         for i, B_i in enumerate(self.B_values):
@@ -190,6 +194,7 @@ class Prover:
         return Message2(
             self.A_comm_1,
             self.Q_A_comm_1,
+            self.f_comm_1,
             self.B_0_comm_1,
             self.Q_B_comm_1,
             self.P_comm_1
@@ -221,7 +226,7 @@ class Prover:
         v = self.rlc(b_0_at_gamma, f_at_gamma, Q_b_at_gamma)
         # (b) compute commitment: pi_gamma = [h(X)]_1
         h_poly = (self.rlc(self.B_0_poly, self.f_poly, self.Q_B_poly) - v) / (self.x_poly - gamma)
-        h_comm_1 = setup.commit(h_poly)
+        pi_gamma = setup.commit(h_poly)
 
         # 3.7 commit A_0(X): Step 7 in the paper
         # (a) compute a_0_comm_1
@@ -229,7 +234,7 @@ class Prover:
         a_0_comm_1 = setup.commit(a_0_poly)
         print("Prover: a_0_comm_1: ", a_0_comm_1)
 
-        return Message3(b_0_at_gamma, f_at_gamma, a_at_0, h_comm_1, a_0_comm_1)
+        return Message3(b_0_at_gamma, f_at_gamma, a_at_0, pi_gamma, a_0_comm_1)
 
     # random linear combination
     def rlc(self, term_1, term_2, term_3):

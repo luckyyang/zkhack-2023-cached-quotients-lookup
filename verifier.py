@@ -26,13 +26,14 @@ class VerificationKey:
         m_comm_1 = proof["m_comm_1"]
         A_comm_1 = proof["A_comm_1"]
         Q_A_comm_1 = proof["Q_A_comm_1"]
+        f_comm_1 = proof["f_comm_1"]
         B_0_comm_1 = proof["B_0_comm_1"]
         Q_B_comm_1 = proof["Q_B_comm_1"]
         P_comm_1 = proof["P_comm_1"]
         b_0_at_gamma = proof["b_0_at_gamma"]
         f_at_gamma = proof["f_at_gamma"]
         a_at_0 = proof["a_at_0"]
-        h_comm_1 = proof["h_comm_1"]
+        pi_gamma = proof["pi_gamma"]
         a_0_comm_1 = proof["a_0_comm_1"]
 
         # Vefify
@@ -45,7 +46,7 @@ class VerificationKey:
         ])
         A_check_lhs1 = b.pairing(self.T_comm_2, A_comm_1)
         A_check_rhs1 = b.pairing(self.Z_V_comm_2, Q_A_comm_1)
-        A_check_rhs2 = b.pairing(powers_of_x2[0], comb)
+        A_check_rhs2 = b.pairing(b.G2, comb)
         assert A_check_lhs1 == A_check_rhs1 * A_check_rhs2, "Check 1 failed: A encodes the correct values"
         print("=== Finished Check 1: round 2.11: A encodes the correct values ===")
 
@@ -59,7 +60,7 @@ class VerificationKey:
         x_exponent_comm_2 = setup.commit2(x_exponent_poly)
 
         B_0_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
-        B_0_check_rhs = b.pairing(powers_of_x2[0], P_comm_1)
+        B_0_check_rhs = b.pairing(b.G2, P_comm_1)
         assert B_0_check_lhs == B_0_check_rhs, "Check 2 failed: B0 degree check"
         print("=== Finished Check 2: B_0 has the appropriate degree ===")
 
@@ -70,11 +71,24 @@ class VerificationKey:
         Z_H_gamma = gamma ** group_order_n - 1
         b_gamma = b_0_at_gamma * gamma + b_at_0
         Q_b_at_gamma = (b_gamma * (f_at_gamma + beta) - Scalar(1)) / Z_H_gamma
-        c = self.rlc(b_at_0, f_at_gamma, Q_b_at_gamma, eta)
+        # (a) both P and V compute v
+        v = self.rlc(b_0_at_gamma, f_at_gamma, Q_b_at_gamma, eta)
+        # v computes c
+        c = ec_lincomb([
+            (B_0_comm_1, 1),
+            (f_comm_1, eta),
+            (Q_B_comm_1, eta * eta)
+        ])
+
         # batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma
-        batch_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
-        batch_check_rhs = b.pairing(powers_of_x2[0], P_comm_1)
-        assert B_0_check_lhs == B_0_check_rhs, "Check 3 failed: B0 degree check"
+        comb_batch = ec_lincomb([
+            (c, 1),
+            (b.G1, -v),
+            (pi_gamma, gamma)
+        ])
+        batch_check_lhs = b.pairing(b.G2, comb_batch)
+        batch_check_rhs = b.pairing(powers_of_x2[1], pi_gamma)
+        assert batch_check_lhs == batch_check_rhs, "Check 3 failed: batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma"
         print("=== Finished Check 3: batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma ===")
 
         ### Check 4: 3.7 (b) ###
@@ -89,7 +103,7 @@ class VerificationKey:
         assert x_comm_2 == powers_of_x2[1], "failed x commitment ==========="
         one_poly = Polynomial([Scalar(1)], Basis.MONOMIAL)
         one_comm_2 = setup.commit2(one_poly)
-        assert one_comm_2 == powers_of_x2[0], "failed 1 commitment ==========="
+        assert one_comm_2 == b.G2, "failed 1 commitment ==========="
         a_0_check_lhs = b.pairing(one_comm_2, a_0_check_comb)
         a_0_check_rhs = b.pairing(x_comm_2, a_0_comm_1)
 
