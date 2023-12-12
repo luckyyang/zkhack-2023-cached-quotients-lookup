@@ -29,9 +29,9 @@ class VerificationKey:
         B_0_comm_1 = proof["B_0_comm_1"]
         Q_B_comm_1 = proof["Q_B_comm_1"]
         P_comm_1 = proof["P_comm_1"]
-        b_0_gamma = proof["b_0_gamma"]
-        f_gamma = proof["f_gamma"]
-        a_0 = proof["a_0"]
+        b_0_at_gamma = proof["b_0_at_gamma"]
+        f_at_gamma = proof["f_at_gamma"]
+        a_at_0 = proof["a_at_0"]
         h_comm_1 = proof["h_comm_1"]
         a_0_comm_1 = proof["a_0_comm_1"]
 
@@ -64,25 +64,25 @@ class VerificationKey:
         print("=== Finished Check 2: B_0 has the appropriate degree ===")
 
         ### Check 3: 3.6 (c) ###
-        print("=== Started Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
+        print("=== Started Check 3: batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma ===")
         # compute c
-        b_0 = group_order_N * a_0 / group_order_n
+        b_at_0 = group_order_N * a_at_0 / group_order_n
         Z_H_gamma = gamma ** group_order_n - 1
-        b_gamma = b_0_gamma * gamma + b_0
-        Q_b_gamma = (b_gamma * (f_gamma + beta) - Scalar(1)) / Z_H_gamma
-        c = self.rlc(b_0, f_gamma, Q_b_gamma, eta)
-        # batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma
+        b_gamma = b_0_at_gamma * gamma + b_at_0
+        Q_b_at_gamma = (b_gamma * (f_at_gamma + beta) - Scalar(1)) / Z_H_gamma
+        c = self.rlc(b_at_0, f_at_gamma, Q_b_at_gamma, eta)
+        # batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma
         batch_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
         batch_check_rhs = b.pairing(powers_of_x2[0], P_comm_1)
         assert B_0_check_lhs == B_0_check_rhs, "Check 3 failed: B0 degree check"
-        print("=== Finished Check 3: batched KZG check for the correctness of b_0_gamma, f_gamma, Q_b_gamma ===")
+        print("=== Finished Check 3: batched KZG check for the correctness of b_0_at_gamma, f_at_gamma, Q_b_at_gamma ===")
 
         ### Check 4: 3.7 (b) ###
-        print("=== Started Check 4: KZG check for the correctness of a_0 ===")
+        print("=== Started Check 4: KZG check for the correctness of a_at_0 ===")
         a_0_check_comb = ec_lincomb([
-            # A_comm_1 - a_0
+            # A_comm_1 - a_at_0
             (A_comm_1, 1),
-            (b.G1, -a_0)
+            (b.G1, -a_at_0)
         ])
         x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
         x_comm_2 = setup.commit2(x_poly)
@@ -93,8 +93,8 @@ class VerificationKey:
         a_0_check_lhs = b.pairing(one_comm_2, a_0_check_comb)
         a_0_check_rhs = b.pairing(x_comm_2, a_0_comm_1)
 
-        assert a_0_check_lhs == a_0_check_rhs, "Check 4 failed: a_0 check"
-        print("=== Finished Check 4: KZG check for the correctness of a_0 ===")
+        assert a_0_check_lhs == a_0_check_rhs, "Check 4 failed: a_at_0 check"
+        print("=== Finished Check 4: KZG check for the correctness of a_at_0 ===")
 
         print("Finished to verify proof")
         return True
@@ -124,4 +124,4 @@ class VerificationKey:
         print(f"Done KZG10 commitment check for {eval_key} polynomial")
 
     def rlc(self, term_1, term_2, term_3, eta):
-        return term_1 + term_2 * eta + term_2 * eta * eta
+        return term_1 + term_2 * eta + term_3 * eta * eta

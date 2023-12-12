@@ -23,9 +23,9 @@ class Proof:
         proof["Q_B_comm_1"] = self.msg_2.Q_B_comm_1
         proof["P_comm_1"] = self.msg_2.P_comm_1
         # msg_3
-        proof["b_0_gamma"] = self.msg_3.b_0_gamma
-        proof["f_gamma"] = self.msg_3.f_gamma
-        proof["a_0"] = self.msg_3.a_0
+        proof["b_0_at_gamma"] = self.msg_3.b_0_at_gamma
+        proof["f_at_gamma"] = self.msg_3.f_at_gamma
+        proof["a_at_0"] = self.msg_3.a_at_0
         proof["h_comm_1"] = self.msg_3.h_comm_1
         proof["a_0_comm_1"] = self.msg_3.a_0_comm_1
 
@@ -41,6 +41,7 @@ class Prover:
     def __init__(self, setup: Setup, table: list, group_order_N: int, group_order_n: int):
         self.setup = setup
         self.table = table
+        self.t_values = [Scalar(val) for val in self.table]
         self.group_order_N = group_order_N
         self.group_order_n = group_order_n
         self.roots_of_unity_N = Scalar.roots_of_unity(group_order_N)
@@ -69,10 +70,10 @@ class Prover:
         setup = self.setup
         duplicates = dict(Counter(witness))
         self.m_values = [Scalar(duplicates.get(val, 0)) for val in self.table]
-        self.t_values = [Scalar(val) for val in self.table]
         print("m_values: ", self.m_values)
         m_poly = Polynomial(self.m_values, Basis.LAGRANGE)
         self.m_poly = m_poly.ifft()
+        # commit A(X) on G1(by default)
         self.m_comm_1 = setup.commit(self.m_poly)
         print("Commitment of m(X): ", self.m_comm_1)
 
@@ -86,7 +87,7 @@ class Prover:
         beta = self.beta
         m_values = self.m_values
         t_values = self.t_values
-        # 1. commit A(X)
+        # 1. commit A(X): Step 1-3 in the paper
         # 1.a. compute A_i values
         self.A_values = []
         for i, t_i in enumerate(t_values):
@@ -98,7 +99,7 @@ class Prover:
 
         # 1.b. compute A(X) from A_i values
         A_poly = Polynomial(self.A_values, Basis.LAGRANGE)
-        # in coefficient form
+        # A(X) in coefficient form
         self.A_poly = A_poly.ifft()
         assert A_poly.barycentric_eval(Scalar(0))  == self.A_poly.coeff_eval(Scalar(0)), "A value at 0 should be equal"
 
@@ -106,15 +107,15 @@ class Prover:
         self.A_comm_1 = setup.commit(self.A_poly)
         print("Commitment of A(X): ", self.A_comm_1)
 
-        # 2. commit Q_A(X)
-        # 2.a. T(X) in coefficient form
+        # 2. commit Q_A(X): Step 4 in the paper
+        # 2.a. T(X) in lagrange form
         T_poly = Polynomial(t_values, Basis.LAGRANGE)
-        # in coefficient form
+        # T(X) in coefficient form
         self.T_poly = T_poly.ifft()
         # 2.b. vanishing polynomial: X^N - 1, N = group_order_N - 1
-        ZH_array = [Scalar(-1)] + [Scalar(0)] * (group_order_N - 1) + [Scalar(1)]
-        # in coefficient form
-        ZH_poly = Polynomial(ZH_array, Basis.MONOMIAL)
+        ZV_array = [Scalar(-1)] + [Scalar(0)] * (group_order_N - 1) + [Scalar(1)]
+        # vanishing polynomial in coefficient form
+        ZV_poly = Polynomial(ZV_array, Basis.MONOMIAL)
 
         # sanity check
         for i, A_i in enumerate(self.A_values):
@@ -124,12 +125,12 @@ class Prover:
             t_value = self.T_poly.coeff_eval(point)
             assert a_value == m_value / (beta + t_value) , "Not equal"
         # 2.c. Q_A(X) in coefficient form
-        self.Q_A_poly = (self.A_poly * (self.T_poly + beta) - self.m_poly) / ZH_poly
+        self.Q_A_poly = (self.A_poly * (self.T_poly + beta) - self.m_poly) / ZV_poly
         # 2.d. commit Q_A(X)
         self.Q_A_comm_1 = setup.commit(self.Q_A_poly)
         print("Commitment of Q_A(X): ", self.Q_A_comm_1)
 
-        # 3. commit B_0(X)
+        # 3. commit B_0(X): Step 5-7 in the paper
         # 3.a. compute B_0_i values
         self.B_values = []
         f_values = self.lookup_table
@@ -144,21 +145,21 @@ class Prover:
         self.B_poly = B_poly.ifft()
         # f(X) = X, coefficient form: [0, 1]
         self.x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
-        B_0_eval = self.B_poly.coeff_eval(Scalar(0))
-        print("B_0_eval: ", B_0_eval)
-        self.B_0_poly = (self.B_poly - B_0_eval) / self.x_poly
+        B_at_0 = self.B_poly.coeff_eval(Scalar(0))
+        print("B_at_0: ", B_at_0)
+        self.B_0_poly: Polynomial = (self.B_poly - B_at_0) / self.x_poly
         # sanity check
         for i in range(group_order_n):
             point = self.roots_of_unity_N[i]
             b_value = self.B_poly.coeff_eval(point)
             b_0_value = self.B_0_poly.coeff_eval(point)
             assert b_value == self.B_values[i], "B_value and self.B_values[i]: Not equal"
-            assert b_0_value == (b_value - B_0_eval) / point, "B_0: Not equal"
+            assert b_0_value == (b_value - B_at_0) / point, "B_0: Not equal"
         # 3.c. commit B_0(X)
         self.B_0_comm_1 = setup.commit(self.B_0_poly)
         print("Commitment of B_0(X): ", self.B_0_comm_1)
 
-        # 4. commit Q_B(X)
+        # 4. commit Q_B(X): Step 9 in the paper
         # 4.a. f(X) in coefficient form
         f_poly = Polynomial(f_values, Basis.LAGRANGE)
         # in coefficient form
@@ -171,14 +172,13 @@ class Prover:
             f_value = self.f_poly.coeff_eval(point)
             assert b_value == 1 / (beta + f_value) , "B quotient: Not equal"
         # 4.b. Q_B(X) in coefficient form
-        self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZH_poly
-        # 4.c. commit Q_A(X)
+        self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZV_poly
+        # 4.c. commit Q_B(X): Step 9 in the paper
         self.Q_B_comm_1 = setup.commit(self.Q_B_poly)
         print("Commitment of Q_B(X): ", self.Q_B_comm_1)
 
-        # 5. commit P(X)
+        # 5. commit P(X): Step 10 in the paper
         # N - 1 - (n - 2)
-        # TODO: N should >> n
         x_exponent_order = group_order_N - 1 - (group_order_n - 2)
         x_exponent_values_in_coeff = [Scalar(0)] * (x_exponent_order) + [Scalar(1)]
         x_exponent_poly = Polynomial(x_exponent_values_in_coeff, Basis.MONOMIAL)
@@ -196,42 +196,41 @@ class Prover:
         )
 
     def round_3(self) -> Message3:
-        # 1. V sends random γ,η ∈ F.
+        # 1. V sends random γ,η ∈ F.: Step 1 in the paper
         setup = self.setup
         beta = self.beta
         gamma = self.gamma
-        eta = self.eta
         group_order_N = self.group_order_N
         group_order_n = self.group_order_n
 
-        # 2. compute b_0_gamma
-        b_0_gamma = self.B_0_poly.coeff_eval(gamma)
-        # compute f_gamma
-        f_gamma = self.f_poly.coeff_eval(gamma)
-        # 3. compute a_0
-        a_0 = self.A_poly.coeff_eval(Scalar(0))
-        # 4. compute b_0
-        b_0 = group_order_N * a_0 / group_order_n
-        # 5. compute b_gamma, and Q_b_gamma
-        Z_H_gamma = gamma ** group_order_n - 1
-        b_gamma = b_0_gamma * gamma + b_0
-        Q_b_gamma = (b_gamma * (f_gamma + beta) - Scalar(1)) / Z_H_gamma
+        # 2. compute b_0_at_gamma: Step 2 in the paper
+        b_0_at_gamma = self.B_0_poly.coeff_eval(gamma)
+        # compute f_at_gamma
+        f_at_gamma = self.f_poly.coeff_eval(gamma)
+        # 3. compute a_at_0: Step 3 in the paper
+        a_at_0 = self.A_poly.coeff_eval(Scalar(0))
+        # 4. compute b_at_0: Step 4 in the paper
+        b_at_0 = group_order_N * a_at_0 / group_order_n
+        # 5. compute b_at_gamma, and Q_b_at_gamma: Step 5 in the paper
+        Z_H_at_gamma = gamma ** group_order_n - 1
+        b_at_gamma = b_0_at_gamma * gamma + b_at_0
+        Q_b_at_gamma = (b_at_gamma * (f_at_gamma + beta) - Scalar(1)) / Z_H_at_gamma
 
-        # 6. batch KZG check
+        # 6. batch KZG check: Step 6 in the paper
         # (a) both P and V compute v
-        v = self.rlc(b_0_gamma, f_gamma, Q_b_gamma)
+        v = self.rlc(b_0_at_gamma, f_at_gamma, Q_b_at_gamma)
         # (b) compute commitment: pi_gamma = [h(X)]_1
         h_poly = (self.rlc(self.B_0_poly, self.f_poly, self.Q_B_poly) - v) / (self.x_poly - gamma)
         h_comm_1 = setup.commit(h_poly)
 
-        # 3.7
+        # 3.7 commit A_0(X): Step 7 in the paper
         # (a) compute a_0_comm_1
-        a_0_poly = (self.A_poly - a_0) / self.x_poly
+        a_0_poly = (self.A_poly - a_at_0) / self.x_poly
         a_0_comm_1 = setup.commit(a_0_poly)
         print("Prover: a_0_comm_1: ", a_0_comm_1)
 
-        return Message3(b_0_gamma, f_gamma, a_0, h_comm_1, a_0_comm_1)
+        return Message3(b_0_at_gamma, f_at_gamma, a_at_0, h_comm_1, a_0_comm_1)
 
     # random linear combination
     def rlc(self, term_1, term_2, term_3):
-        return term_1 + term_2 * self.eta + term_2 * self.eta * self.eta
+        return term_1 + term_2 * self.eta + term_3 * self.eta * self.eta

@@ -22,9 +22,9 @@ class Message2:
 @dataclass
 class Message3:
     # Commitments in G1
-    b_0_gamma: G1Point
-    f_gamma: G1Point
-    a_0: G1Point
+    b_0_at_gamma: G1Point
+    f_at_gamma: G1Point
+    a_at_0: G1Point
     h_comm_1: G1Point
     a_0_comm_1: G1Point
 
@@ -67,9 +67,9 @@ class Transcript(MerlinTranscript):
         return gamma, eta
 
     # def round_3(self, message: Message3) -> Scalar:
-    #     self.append_point(b"b_0_gamma", message.b_0_gamma)
-    #     self.append_point(b"f_gamma", message.f_gamma)
-    #     self.append_point(b"a_0", message.a_0)
+    #     self.append_point(b"b_0_at_gamma", message.b_0_at_gamma)
+    #     self.append_point(b"f_at_gamma", message.f_at_gamma)
+    #     self.append_point(b"a_at_0", message.a_at_0)
     #     self.append_point(b"h_comm_1", message.h_comm_1)
     #     self.append_point(b"a_0_comm_1", message.a_0_comm_1)
 
