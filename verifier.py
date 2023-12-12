@@ -57,7 +57,7 @@ class VerificationKey:
         x_exponent_values_in_coeff = [Scalar(0)] * (x_exponent_order) + [Scalar(1)]
         x_exponent_poly = Polynomial(x_exponent_values_in_coeff, Basis.MONOMIAL)
         # commit x_exponent_poly
-        x_exponent_comm_2 = setup.commit2(x_exponent_poly)
+        x_exponent_comm_2 = setup.commit_g2(x_exponent_poly)
 
         B_0_check_lhs = b.pairing(x_exponent_comm_2, B_0_comm_1)
         B_0_check_rhs = b.pairing(b.G2, P_comm_1)
@@ -99,10 +99,10 @@ class VerificationKey:
             (b.G1, -a_at_0)
         ])
         x_poly = Polynomial([Scalar(0), Scalar(1)], Basis.MONOMIAL)
-        x_comm_2 = setup.commit2(x_poly)
+        x_comm_2 = setup.commit_g2(x_poly)
         assert x_comm_2 == powers_of_x2[1], "failed x commitment ==========="
         one_poly = Polynomial([Scalar(1)], Basis.MONOMIAL)
-        one_comm_2 = setup.commit2(one_poly)
+        one_comm_2 = setup.commit_g2(one_poly)
         assert one_comm_2 == b.G2, "failed 1 commitment ==========="
         a_0_check_lhs = b.pairing(one_comm_2, a_0_check_comb)
         a_0_check_rhs = b.pairing(x_comm_2, a_0_comm_1)

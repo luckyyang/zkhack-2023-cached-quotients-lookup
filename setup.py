@@ -54,7 +54,7 @@ class Setup(object):
 
     # Encodes the KZG commitment that evaluates to the given values in the group on G1
     @classmethod
-    def commit(self, values: Polynomial) -> G1Point:
+    def commit_g1(self, values: Polynomial) -> G1Point:
         if (values.basis == Basis.LAGRANGE):
             # inverse FFT from Lagrange basis to monomial basis
             coeffs = values.ifft().values
@@ -66,7 +66,7 @@ class Setup(object):
 
     # Encodes the KZG commitment that evaluates to the given values in the group on G2
     @classmethod
-    def commit2(self, values: Polynomial) -> G2Point:
+    def commit_g2(self, values: Polynomial) -> G2Point:
         if (values.basis == Basis.LAGRANGE):
             # inverse FFT from Lagrange basis to monomial basis
             coeffs = values.ifft().values
@@ -86,13 +86,13 @@ class Setup(object):
         # in coefficient form
         Z_V_poly = Polynomial(Z_V_array, Basis.MONOMIAL)
 
-        Z_V_comm_2 = self.commit2(Z_V_poly)
+        Z_V_comm_2 = self.commit_g2(Z_V_poly)
         print("Commitment of Z_V(X) on G2: ", Z_V_comm_2)
         # 3. Compute and output [T(x)] * G2
         # TODO: optimization
         t_values = [Scalar(val) for val in public_table]
         T_poly = Polynomial(t_values, Basis.LAGRANGE)
-        T_comm_2 = self.commit2(T_poly)
+        T_comm_2 = self.commit_g2(T_poly)
         print("Commitment of T(X) on G2: ", T_comm_2)
         # 4. (a): qi = [Qi(x)] * G1
         # 4. (b): [Li(x)] * G1

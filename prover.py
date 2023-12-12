@@ -75,7 +75,7 @@ class Prover:
         m_poly = Polynomial(self.m_values, Basis.LAGRANGE)
         self.m_poly = m_poly.ifft()
         # commit A(X) on G1(by default)
-        self.m_comm_1 = setup.commit(self.m_poly)
+        self.m_comm_1 = setup.commit_g1(self.m_poly)
         print("Commitment of m(X): ", self.m_comm_1)
 
         return Message1(self.m_comm_1)
@@ -105,7 +105,7 @@ class Prover:
         assert A_poly.barycentric_eval(Scalar(0))  == self.A_poly.coeff_eval(Scalar(0)), "A value at 0 should be equal"
 
         # 1.c. commit A(X)
-        self.A_comm_1 = setup.commit(self.A_poly)
+        self.A_comm_1 = setup.commit_g1(self.A_poly)
         print("Commitment of A(X): ", self.A_comm_1)
 
         # 2. commit Q_A(X): Step 4 in the paper
@@ -132,7 +132,7 @@ class Prover:
         # 2.c. Q_A(X) in coefficient form
         self.Q_A_poly = (self.A_poly * (self.T_poly + beta) - self.m_poly) / ZV_poly
         # 2.d. commit Q_A(X)
-        self.Q_A_comm_1 = setup.commit(self.Q_A_poly)
+        self.Q_A_comm_1 = setup.commit_g1(self.Q_A_poly)
         print("Commitment of Q_A(X): ", self.Q_A_comm_1)
 
         # 3. commit B_0(X): Step 5-7 in the paper
@@ -161,7 +161,7 @@ class Prover:
             assert b_value == self.B_values[i], "B_value and self.B_values[i]: Not equal"
             assert b_0_value == (b_value - B_at_0) / point, "B_0: Not equal"
         # 3.c. commit B_0(X)
-        self.B_0_comm_1 = setup.commit(self.B_0_poly)
+        self.B_0_comm_1 = setup.commit_g1(self.B_0_poly)
         print("Commitment of B_0(X): ", self.B_0_comm_1)
 
         # 4. commit Q_B(X): Step 9 in the paper
@@ -170,7 +170,7 @@ class Prover:
         # in coefficient form
         self.f_poly = f_poly.ifft()
         # commit f(X)
-        self.f_comm_1 = setup.commit(self.f_poly)
+        self.f_comm_1 = setup.commit_g1(self.f_poly)
         print("Commitment of f(X): ", self.f_comm_1)
 
         # sanity check
@@ -182,7 +182,7 @@ class Prover:
         # 4.b. Q_B(X) in coefficient form
         self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZH_poly
         # 4.c. commit Q_B(X): Step 9 in the paper
-        self.Q_B_comm_1 = setup.commit(self.Q_B_poly)
+        self.Q_B_comm_1 = setup.commit_g1(self.Q_B_poly)
         print("Commitment of Q_B(X): ", self.Q_B_comm_1)
 
         # 5. commit P(X): Step 10 in the paper
@@ -192,7 +192,7 @@ class Prover:
         x_exponent_poly = Polynomial(x_exponent_values_in_coeff, Basis.MONOMIAL)
         self.P_poly = self.B_0_poly * x_exponent_poly
         # 5.c. commit P(X)
-        self.P_comm_1 = setup.commit(self.P_poly)
+        self.P_comm_1 = setup.commit_g1(self.P_poly)
         print("Commitment of P(X): ", self.P_comm_1)
 
         return Message2(
@@ -230,12 +230,12 @@ class Prover:
         v = self.rlc(b_0_at_gamma, f_at_gamma, Q_b_at_gamma)
         # (b) compute commitment: pi_gamma = [h(X)]_1
         h_poly = (self.rlc(self.B_0_poly, self.f_poly, self.Q_B_poly) - v) / (self.x_poly - gamma)
-        pi_gamma = setup.commit(h_poly)
+        pi_gamma = setup.commit_g1(h_poly)
 
         # 3.7 commit A_0(X): Step 7 in the paper
         # (a) compute a_0_comm_1
         a_0_poly = (self.A_poly - a_at_0) / self.x_poly
-        a_0_comm_1 = setup.commit(a_0_poly)
+        a_0_comm_1 = setup.commit_g1(a_0_poly)
         print("Prover: a_0_comm_1: ", a_0_comm_1)
 
         return Message3(b_0_at_gamma, f_at_gamma, a_at_0, pi_gamma, a_0_comm_1)
