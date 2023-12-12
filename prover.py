@@ -117,6 +117,10 @@ class Prover:
         ZV_array = [Scalar(-1)] + [Scalar(0)] * (group_order_N - 1) + [Scalar(1)]
         # vanishing polynomial in coefficient form
         ZV_poly = Polynomial(ZV_array, Basis.MONOMIAL)
+        # vanishing polynomial: X^n - 1, N = group_order_n - 1
+        ZH_array = [Scalar(-1)] + [Scalar(0)] * (group_order_n - 1) + [Scalar(1)]
+        # vanishing polynomial in coefficient form
+        ZH_poly = Polynomial(ZH_array, Basis.MONOMIAL)
 
         # sanity check
         for i, A_i in enumerate(self.A_values):
@@ -151,7 +155,7 @@ class Prover:
         self.B_0_poly: Polynomial = (self.B_poly - B_at_0) / self.x_poly
         # sanity check
         for i in range(group_order_n):
-            point = self.roots_of_unity_N[i]
+            point = self.roots_of_unity_n[i]
             b_value = self.B_poly.coeff_eval(point)
             b_0_value = self.B_0_poly.coeff_eval(point)
             assert b_value == self.B_values[i], "B_value and self.B_values[i]: Not equal"
@@ -171,12 +175,12 @@ class Prover:
 
         # sanity check
         for i, B_i in enumerate(self.B_values):
-            point = self.roots_of_unity_N[i]
+            point = self.roots_of_unity_n[i]
             b_value = self.B_poly.coeff_eval(point)
             f_value = self.f_poly.coeff_eval(point)
             assert b_value == 1 / (beta + f_value) , "B quotient: Not equal"
         # 4.b. Q_B(X) in coefficient form
-        self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZV_poly
+        self.Q_B_poly = (self.B_poly * (self.f_poly + beta) - Scalar(1)) / ZH_poly
         # 4.c. commit Q_B(X): Step 9 in the paper
         self.Q_B_comm_1 = setup.commit(self.Q_B_poly)
         print("Commitment of Q_B(X): ", self.Q_B_comm_1)
